@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum State {
+  ACTIVE
+  INACTIVE
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  name      String
+  workouts  Workout[] // Relación uno a muchos con Workout
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  state     State
+}
+
+model Exercise {
+  id          String            @id @default(uuid())
+  name        String            @unique
+  description String?
+  category    Category // Puede ser "cardio", "strength", "flexibility", etc.
+  muscleGroup MuscleGroup
+  imageUrl    String?
+  workouts    WorkoutExercise[] // Relación uno a muchos con WorkoutExercise
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  state       State
+}
+
+enum Category {
+  CARDIO
+  STRENGTH
+  FLEXIBILITY
+}
+
+enum MuscleGroup {
+  CHEST
+  BACK
+  LEGS
+}
+
+model Workout {
+  id            String            @id @default(uuid())
+  userId        String
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  scheduledAt   DateTime?
+  exercises     WorkoutExercise[] // Relación uno a muchos con WorkoutExercise
+  workoutStatus WorkoutStatus     @default(PENDING)
+  comments      String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  state         State
+}
+
+model WorkoutExercise {
+  id          String   @id @default(uuid())
+  workoutId   String
+  exerciseId  String
+  workout     Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  sets        Int
+  repetitions Int
+  weight      Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  state       State
+}
+
+enum WorkoutStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
